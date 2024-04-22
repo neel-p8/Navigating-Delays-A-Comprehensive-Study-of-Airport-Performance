@@ -5,6 +5,9 @@
 #include <unordered_map>
 #include <string>
 #include <iomanip>
+#include <algorithm>
+#include <set>
+#include <map>
 
 using namespace std;
 
@@ -126,6 +129,32 @@ double calculatePercentage(int numerator, int denominator) {
     }
     return (static_cast<double>(numerator) / denominator) * 100.0;
 }
+// Function to convert a string to uppercase
+string toUpper(const string& str) {
+    string upperStr = str;
+    transform(upperStr.begin(), upperStr.end(), upperStr.begin(), ::toupper);
+    return upperStr;
+}
+
+// Function to convert a string to lowercase
+string toLower(const string& str) {
+    string lowerStr = str;
+    transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(), ::tolower);
+    return lowerStr;
+}
+
+// Function to check if a month is valid
+string isValidMonth(const string& month) {
+    map<string, string> validMonths = { {"january", "January"}, {"february", "February"}, {"march", "March"},
+                                        {"april", "April"}, {"may", "May"}, {"june", "June"},
+                                        {"july", "July"}, {"august", "August"}, {"september", "September"},
+                                        {"october", "October"}, {"november", "November"}, {"december", "December"} };
+    auto it = validMonths.find(toLower(month));
+    if (it != validMonths.end()) {
+        return it->second;
+    }
+    return "";
+}
 
 int main() {
     string file = "airlines.csv";
@@ -143,19 +172,24 @@ int main() {
         string airport_code, travel_month;
         cout << "Enter the airport code: ";
         cin >> airport_code;
-        cout << "Enter travel month: ";
+        airport_code = toUpper(airport_code);
+        cout << "Enter travel month name: ";
         cin >> travel_month;
+        string validMonth = isValidMonth(travel_month);  // Check if month is valid
+        if (validMonth.empty()) {
+            cout << "Invalid month. Please enter a valid month." << endl;
+            return 0;
+        }
+        travel_month = validMonth;  // Convert to appropriate case
         cout << endl;
         auto it = data.find(airport_code);
         if (it != data.end()) {
             cout << "Accessing Airport Data using Hash Table..." << endl;
-            cout << "-----------------------------------------------" <<
-                endl;
+            cout << "-----------------------------------------------" << endl;
             cout << "Airport Code: " << it->first << endl;
             cout << "Airport Name: " << it->second[0].name << endl;
             cout << "Travel Month: " << travel_month << endl;
-            cout << "-----------------------------------------------" <<
-                endl;
+            cout << "-----------------------------------------------" << endl;
             // Initialize variables to calculate total number of flights, delays, and cancellations
             int totalFlights = 0;
             int totalDelayed = 0;
@@ -217,8 +251,15 @@ int main() {
         string airport_code, travel_month;
         cout << "Enter the airport code: ";
         cin >> airport_code;
-        cout << "Enter travel month: ";
+        airport_code = toUpper(airport_code);
+        cout << "Enter travel month name: ";
         cin >> travel_month;
+        string validMonth = isValidMonth(travel_month);  // Check if month is valid
+        if (validMonth.empty()) {
+            cout << "Invalid month. Please enter a valid month." << endl;
+            return 0;
+        }
+        travel_month = validMonth;  // Convert to appropriate case
         cout << endl;
         // Find node corresponding to airport code
         TrieNode* node = root;
@@ -231,13 +272,11 @@ int main() {
             node = node->children[c];
         }
         cout << "Accessing Airport Data using Trie..." << endl;
-        cout << "-----------------------------------------------" <<
-            endl;
+        cout << "-----------------------------------------------" << endl;
         cout << "Airport Code: " << airport_code << endl;
         cout << "Airport Name: " << node->airport_data[0].name << endl;
         cout << "Travel Month: " << travel_month << endl;
-        cout << "-----------------------------------------------" <<
-            endl;
+        cout << "-----------------------------------------------" << endl;
         // Initialize variables to calculate total number of flights, delays, and cancellations
         int totalFlights = 0;
         int totalDelayed = 0;
