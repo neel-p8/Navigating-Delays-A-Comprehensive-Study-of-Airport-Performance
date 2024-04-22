@@ -143,6 +143,35 @@ string toLower(const string& str) {
     return lowerStr;
 }
 
+// code below for calulating top 5 most delay airports
+double calculateDelayRate(const vector<AirportData>& data) {
+    int totalFlights = 0;
+    int totalDelayedCanceled = 0;
+    for (const auto& entry : data) {
+        totalFlights += entry.total_flights;
+        totalDelayedCanceled += entry.delayed + entry.canceled;
+    }
+    if (totalFlights == 0) {
+        return 0.0;
+    }
+    return static_cast<double>(totalDelayedCanceled) / totalFlights * 100.0;
+}
+
+// traverse trie for airport data for calculating top 5
+void traverseTrie(TrieNode* root, vector<pair<string, vector<AirportData>>>& airportData) {
+    if (root == nullptr) {
+        return;
+    }
+
+    if (!root->airport_data.empty()) {
+        airportData.emplace_back(root->airport_data[0].code, root->airport_data);
+    }
+
+    for (const auto& child : root->children) {
+        traverseTrie(child.second, airportData);
+    }
+}
+
 // Function to check if a month is valid
 string isValidMonth(const string& month) {
     map<string, string> validMonths = { {"january", "January"}, {"february", "February"}, {"march", "March"},
@@ -238,6 +267,25 @@ int main() {
             cout << setw(3) << "" << "- Carrier (maintenance, cleaning, fueling, etc.): " << totalCarrier << endl;
             cout << setw(3) << "" << "- National Aviation System (airport operations, etc.): " << totalNavis << endl;
             cout << "----------------------------------------------------------------" << endl;
+
+            vector<pair<string, double>> delayRates;
+                for (const auto& entry : data) {
+                    double rate = calculateDelayRate(entry.second);
+                    delayRates.emplace_back(entry.first, rate);
+                }
+            
+                // Sort the vector in descending order based on the delay/cancellation rates
+                sort(delayRates.begin(), delayRates.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+                    return a.second > b.second;
+                });
+            
+                // Print the top 5 airports with the highest delay/cancellation rates
+                cout << "\nTop 5 Airports with the Highest Delay/Cancellation Rates:" << endl;
+                for (int i = 0; i < 5 && i < delayRates.size(); ++i) {
+                    const auto& airport = data.find(delayRates[i].first)->second;
+                    cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airport[0].name << ": "
+                         << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
+                }
         }
         else {
             cout << "No data found for the entered airport code." <<
@@ -325,6 +373,28 @@ int main() {
         cout << setw(3) << "" << "- Carrier (maintenance, cleaning, fueling, etc.): " << totalCarrier << endl;
         cout << setw(3) << "" << "- National Aviation System (airport operations, etc.): " << totalNavis << endl;
         cout << "----------------------------------------------------------------" << endl;
+
+        vector<pair<string, vector<AirportData>>> airportData;
+        traverseTrie(root, airportData);
+
+        // Create a vector to store airport codes and their delay/cancellation rates
+        vector<pair<string, double>> delayRates;
+        for (const auto& entry : airportData) {
+            double rate = calculateDelayRate(entry.second);
+            delayRates.emplace_back(entry.first, rate);
+        }
+
+        // Sort the vector in descending order based on the delay/cancellation rates
+        sort(delayRates.begin(), delayRates.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+            return a.second > b.second;
+        });
+
+        // Print the top 5 airports with the highest delay/cancellation rates
+        cout << "\nTop 5 Airports with the Highest Delay/Cancellation Rates:" << endl;
+        for (int i = 0; i < 5 && i < delayRates.size(); ++i) {
+            cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airportData[i].second[0].name << ": "
+                 << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
+        }
         break;
     }
     default:
