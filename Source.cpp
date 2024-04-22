@@ -157,16 +157,31 @@ double calculateDelayRate(const vector<AirportData>& data) {
     return static_cast<double>(totalDelayedCanceled) / totalFlights * 100.0;
 }
 
+// same thing as above except with month and year
+double calculateDelayRate(const vector<AirportData>& data, const string& month, const string& year) {
+    int totalFlights = 0;
+    int totalDelayedCanceled = 0;
+    for (const auto& entry : data) {
+        if (entry.month == month && entry.year == year) {
+            totalFlights += entry.total_flights;
+            totalDelayedCanceled += entry.delayed + entry.canceled;
+        }
+    }
+    if (totalFlights == 0) {
+        return 0.0;
+    }
+    return static_cast<double>(totalDelayedCanceled) / totalFlights * 100.0;
+}
+
+
 // traverse trie for airport data for calculating top 5
 void traverseTrie(TrieNode* root, vector<pair<string, vector<AirportData>>>& airportData) {
     if (root == nullptr) {
         return;
     }
-
     if (!root->airport_data.empty()) {
         airportData.emplace_back(root->airport_data[0].code, root->airport_data);
     }
-
     for (const auto& child : root->children) {
         traverseTrie(child.second, airportData);
     }
@@ -187,6 +202,11 @@ string isValidMonth(const string& month) {
 
 int main() {
     string file = "airlines.csv";
+
+    // Create a map to store delay/cancellation rates for different time periods
+    unordered_map<string, double> delayRatesByMonth;
+    unordered_map<string, double> delayRatesByYear;
+
     // User Input for choice
     int choice;
     cout << "Choose a data structure to use:" << endl;
@@ -211,6 +231,7 @@ int main() {
         }
         travel_month = validMonth;  // Convert to appropriate case
         cout << endl;
+
         auto it = data.find(airport_code);
         if (it != data.end()) {
             cout << "Accessing Airport Data using Hash Table..." << endl;
@@ -229,6 +250,10 @@ int main() {
             int totalWeather = 0;
             int totalCanceled = 0;
             for (const auto& entry : it->second) {
+                string monthYear = entry.month + " " + entry.year;
+                delayRatesByMonth[monthYear] = calculateDelayRate(it->second, entry.month, entry.year);
+                delayRatesByYear[entry.year] += calculateDelayRate(it->second, entry.month, entry.year);
+                
                 if (entry.month == travel_month) {
                     cout << "Year: " << entry.year << endl;
                     cout << "Flights Canceled: " << entry.canceled <<
@@ -269,23 +294,38 @@ int main() {
             cout << "----------------------------------------------------------------" << endl;
 
             vector<pair<string, double>> delayRates;
-                for (const auto& entry : data) {
-                    double rate = calculateDelayRate(entry.second);
-                    delayRates.emplace_back(entry.first, rate);
-                }
+            for (const auto& entry : data) {
+                double rate = calculateDelayRate(entry.second);
+                delayRates.emplace_back(entry.first, rate);
+            }
             
-                // Sort the vector in descending order based on the delay/cancellation rates
-                sort(delayRates.begin(), delayRates.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
-                    return a.second > b.second;
-                });
+            // Sort the vector in descending order based on the delay/cancellation rates
+            sort(delayRates.begin(), delayRates.end(), [](const pair<string, double>& a, const pair<string, double>& b) {
+                return a.second > b.second;
+            });
             
-                // Print the top 5 airports with the highest delay/cancellation rates
-                cout << "\nTop 5 Airports with the Highest Delay/Cancellation Rates:" << endl;
-                for (int i = 0; i < 5 && i < delayRates.size(); ++i) {
-                    const auto& airport = data.find(delayRates[i].first)->second;
-                    cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airport[0].name << ": "
-                         << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
-                }
+            // Print the top 5 airports with the highest delay/cancellation rates
+            cout << "\nTop 5 Airports with the Highest Delay/Cancellation Rates:" << endl;
+            for (int i = 0; i < 5 && i < delayRates.size(); ++i) {
+                const auto& airport = data.find(delayRates[i].first)->second;
+                cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airport[0].name << ": "
+                     << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
+            }
+            cout << "-----------------------------------------------" << endl;
+
+            // Normalize the delay/cancellation rates for years
+            for (auto& entry : delayRatesByYear) {
+                entry.second /= 12.0;  // Assuming 12 months in a year
+            }
+            
+            // Print the trends
+            cout << "\nDelay/Cancellation Trends for " << it->second[0].name << " (" << airport_code << "):" << endl;
+            
+            cout << endl << "By Year:" << endl;
+            for (const auto& entry : delayRatesByYear) {
+                cout << setw(3) << entry.first << ": " << setprecision(2) << fixed << entry.second << "%" << endl;
+            }
+            cout << "\n(Note) 2016 will not be accurate" << endl;
         }
         else {
             cout << "No data found for the entered airport code." <<
@@ -336,6 +376,11 @@ int main() {
         int totalWeather = 0;
         // Iterate over all airport data under the specified airport code
         for (const auto& entry : node->airport_data) {
+
+            string monthYear = entry.month + " " + entry.year;
+            delayRatesByMonth[monthYear] = calculateDelayRate(node->airport_data, entry.month, entry.year);
+            delayRatesByYear[entry.year] += calculateDelayRate(node->airport_data, entry.month, entry.year);
+
             // Check if the entry matches the specified travel month
             if (entry.month == travel_month) {
                 cout << "Year: " << entry.year << endl;
@@ -395,6 +440,21 @@ int main() {
             cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airportData[i].second[0].name << ": "
                  << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
         }
+        cout << "-----------------------------------------------" << endl;
+
+        // Normalize the delay/cancellation rates for years
+        for (auto& entry : delayRatesByYear) {
+            entry.second /= 12.0;  // Assuming 12 months in a year
+        }
+
+        // Print the trends
+        cout << "\nDelay/Cancellation Trends for " << node->airport_data[0].name << " (" << airport_code << "):" << endl;
+        cout << "\nBy Year:" << endl;
+        for (const auto& entry : delayRatesByYear) {
+            cout << setw(3) << entry.first << ": " << setprecision(2) << fixed << entry.second << "%" << endl;
+        }
+        cout << "\n(Note) 2016 will not be accurate" << endl;
+
         break;
     }
     default:
