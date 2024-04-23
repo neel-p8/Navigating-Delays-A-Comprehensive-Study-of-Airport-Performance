@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <set>
 #include <map>
-#include <unordered_map>
 #include <chrono>
 #include <cstdlib>
 #include <queue>
@@ -237,7 +236,19 @@ void measureHashTable(const string& filename) {
     duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
     cout << "Average Hash Table Lookup Time: " << duration / 1000.0 << " microseconds" << endl;
 }
-
+void collectAirportCodes(TrieNode* root, vector<string>& airport_codes) {
+    if (root == nullptr) {
+        return;
+    }
+    if (!root->airport_data.empty()) {
+        for (const auto& data : root->airport_data) {
+            airport_codes.push_back(data.code);
+        }
+    }
+    for (const auto& child : root->children) {
+        collectAirportCodes(child.second, airport_codes);
+    }
+}
 // Function to measure build time and memory usage for Trie
 void measureTrie(const string& filename) {
     auto start_time = chrono::high_resolution_clock::now();
@@ -260,46 +271,28 @@ void measureTrie(const string& filename) {
     }
     cout << "Trie Memory Usage: " << memory_usage / 1024.0 / 1024.0 << " MB" << endl;
 
-    /*
+
     // Perform random lookups to measure lookup time
     cout << "Performing 1000 random lookups..." << endl;
     vector<string> airport_codes;
-    for (const auto& entry : root->children) {
-        TrieNode* node = entry.second;
-        while (!node->airport_data.empty()) {
-            airport_codes.push_back(node->airport_data[0].code);
-            node = node->children.begin()->second;
-        }
-    }
+    collectAirportCodes(root,airport_codes);
 
-    int successful_lookups = 0;
-    double total_lookup_time = 0.0;
     start_time = chrono::high_resolution_clock::now();
     for (int i = 0; i < 1000; i++) {
         string airport_code = airport_codes[rand() % airport_codes.size()];
         TrieNode* node = root;
-        bool found = true;
         for (char c : airport_code) {
             if (node->children.find(c) == node->children.end()) {
-                found = false;
                 break;
             }
             node = node->children[c];
-        }
-        if (found) {
-            successful_lookups++;
-            auto lookup_start_time = chrono::high_resolution_clock::now();
-            // Perform some dummy operation to simulate an actual lookup
-            node->airport_data[0].name.length();
-            auto lookup_end_time = chrono::high_resolution_clock::now();
-            total_lookup_time += chrono::duration_cast<chrono::microseconds>(lookup_end_time - lookup_start_time).count();
         }
     }
     end_time = chrono::high_resolution_clock::now();
 
     duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
-    cout << "Successful Lookups: " << successful_lookups << " out of 1000" << endl;
-    cout << "Average Trie Lookup Time: " << (total_lookup_time / successful_lookups) << " microseconds" << endl;*/
+    cout << "Average Trie Lookup Time: " << duration / 1000.0 << " microseconds" << endl;
+
 }
 
 int main() {
@@ -434,8 +427,7 @@ int main() {
                 }
                 cout << "\n(Note) 2016 will not be accurate." << endl;
                 cout << "----------------------------------------------------------------" << endl;
-
-                cout << "\nHash Table Efficiency:" << endl;
+                cout << "Hash Table Efficiency:" << endl;
                 measureHashTable(file);
                 cout << endl;
 
@@ -574,8 +566,7 @@ int main() {
             }
             cout << "\n(Note) 2016 will not be accurate." << endl;
             cout << "----------------------------------------------------------------" << endl;
-
-            cout << "\nTrie:" << endl;
+            cout << "Trie Efficiency: " << endl;
             measureTrie(file);
 
             break;
@@ -585,3 +576,4 @@ int main() {
     }
     return 0;
 }
+
