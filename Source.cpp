@@ -304,6 +304,8 @@ int main() {
 
     // User Input for choice
     int choice;
+    cout << "Disclaimer: To see differences in structure efficiency, run program twice" << endl;
+    cout << "Use same input except chose 1 and 2 respectively, then compare outputs" << endl << endl;
     cout << "Choose a data structure to use:" << endl;
     cout << "1. Hash Table" << endl;
     cout << "2. Trie" << endl;
