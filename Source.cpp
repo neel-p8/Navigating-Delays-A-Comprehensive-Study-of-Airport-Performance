@@ -228,7 +228,7 @@ void measureHashTable(const string& filename) {
     }
 
     start_time = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; i++) {
         string airport_code = airport_codes[rand() % airport_codes.size()];
         auto it = data.find(airport_code);
     }
@@ -260,6 +260,7 @@ void measureTrie(const string& filename) {
     }
     cout << "Trie Memory Usage: " << memory_usage / 1024.0 / 1024.0 << " MB" << endl;
 
+    /*
     // Perform random lookups to measure lookup time
     cout << "Performing 1000 random lookups..." << endl;
     vector<string> airport_codes;
@@ -271,23 +272,35 @@ void measureTrie(const string& filename) {
         }
     }
 
+    int successful_lookups = 0;
+    double total_lookup_time = 0.0;
     start_time = chrono::high_resolution_clock::now();
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1000; i++) {
         string airport_code = airport_codes[rand() % airport_codes.size()];
         TrieNode* node = root;
+        bool found = true;
         for (char c : airport_code) {
             if (node->children.find(c) == node->children.end()) {
+                found = false;
                 break;
             }
             node = node->children[c];
+        }
+        if (found) {
+            successful_lookups++;
+            auto lookup_start_time = chrono::high_resolution_clock::now();
+            // Perform some dummy operation to simulate an actual lookup
+            node->airport_data[0].name.length();
+            auto lookup_end_time = chrono::high_resolution_clock::now();
+            total_lookup_time += chrono::duration_cast<chrono::microseconds>(lookup_end_time - lookup_start_time).count();
         }
     }
     end_time = chrono::high_resolution_clock::now();
 
     duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
-    cout << "Average Trie Lookup Time: " << duration / 1000.0 << " microseconds" << endl;
+    cout << "Successful Lookups: " << successful_lookups << " out of 1000" << endl;
+    cout << "Average Trie Lookup Time: " << (total_lookup_time / successful_lookups) << " microseconds" << endl;*/
 }
-
 
 int main() {
     string file = "airlines.csv";
@@ -395,7 +408,7 @@ int main() {
 
                 // Print the top 5 airports with the highest delay/cancellation rates
                 cout << "Top 5 Airports with the Highest Delay/Cancellation Rates:" << endl;
-                for (int i = 0; i < 5 && i < delayRates.size(); ++i) {
+                for (int i = 0; i < 5 && i < delayRates.size(); i++) {
                     const auto& airport = data.find(delayRates[i].first)->second;
                     cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airport[0].name << ": "
                          << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
@@ -421,6 +434,11 @@ int main() {
                 }
                 cout << "\n(Note) 2016 will not be accurate." << endl;
                 cout << "----------------------------------------------------------------" << endl;
+
+                cout << "\nHash Table Efficiency:" << endl;
+                measureHashTable(file);
+                cout << endl;
+
             }
             else {
                 cout << "No data found for the entered airport code." <<
@@ -531,7 +549,7 @@ int main() {
 
             // Print the top 5 airports with the highest delay/cancellation rates
             cout << "Top 5 Airports with the Highest Delay/Cancellation Rates:" << endl;
-            for (int i = 0; i < 5 && i < delayRates.size(); ++i) {
+            for (int i = 0; i < 5 && i < delayRates.size(); i++) {
                 cout << setw(3) << i + 1 << ". " << setw(3) << delayRates[i].first << " - " << airportData[i].second[0].name << ": "
                      << setprecision(2) << fixed << delayRates[i].second << "%" << endl;
             }
@@ -556,6 +574,9 @@ int main() {
             }
             cout << "\n(Note) 2016 will not be accurate." << endl;
             cout << "----------------------------------------------------------------" << endl;
+
+            cout << "\nTrie:" << endl;
+            measureTrie(file);
 
             break;
         }
