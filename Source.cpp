@@ -8,6 +8,10 @@
 #include <algorithm>
 #include <set>
 #include <map>
+#include <unordered_map>
+#include <chrono>
+#include <cstdlib>
+#include <queue>
 
 using namespace std;
 
@@ -200,6 +204,91 @@ string isValidMonth(const string& month) {
     return "";
 }
 
+// Code for timing the two data structures
+// Function to measure build time and memory usage for hash table
+void measureHashTable(const string& filename) {
+    auto start_time = chrono::high_resolution_clock::now();
+    auto data = buildHashTable(filename);
+    auto end_time = chrono::high_resolution_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+    cout << "Hash Table Build Time: " << duration << " microseconds" << endl;
+
+    size_t memory_usage = 0;
+    for (const auto& entry : data) {
+        memory_usage += sizeof(string) + sizeof(vector<AirportData>) + entry.second.capacity() * sizeof(AirportData);
+    }
+    cout << "Hash Table Memory Usage: " << memory_usage / 1024.0 / 1024.0 << " MB" << endl;
+
+    // Perform random lookups to measure lookup time
+    cout << "Performing 1000 random lookups..." << endl;
+    vector<string> airport_codes;
+    for (const auto& entry : data) {
+        airport_codes.push_back(entry.first);
+    }
+
+    start_time = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 1000; ++i) {
+        string airport_code = airport_codes[rand() % airport_codes.size()];
+        auto it = data.find(airport_code);
+    }
+    end_time = chrono::high_resolution_clock::now();
+
+    duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+    cout << "Average Hash Table Lookup Time: " << duration / 1000.0 << " microseconds" << endl;
+}
+
+// Function to measure build time and memory usage for Trie
+void measureTrie(const string& filename) {
+    auto start_time = chrono::high_resolution_clock::now();
+    TrieNode* root = buildTrie(filename);
+    auto end_time = chrono::high_resolution_clock::now();
+
+    auto duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+    cout << "Trie Build Time: " << duration << " microseconds" << endl;
+
+    size_t memory_usage = 0;
+    queue<TrieNode*> q;
+    q.push(root);
+    while (!q.empty()) {
+        TrieNode* node = q.front();
+        q.pop();
+        memory_usage += sizeof(TrieNode) + node->children.size() * sizeof(TrieNode*) + node->airport_data.capacity() * sizeof(AirportData);
+        for (const auto& child : node->children) {
+            q.push(child.second);
+        }
+    }
+    cout << "Trie Memory Usage: " << memory_usage / 1024.0 / 1024.0 << " MB" << endl;
+
+    // Perform random lookups to measure lookup time
+    cout << "Performing 1000 random lookups..." << endl;
+    vector<string> airport_codes;
+    for (const auto& entry : root->children) {
+        TrieNode* node = entry.second;
+        while (!node->airport_data.empty()) {
+            airport_codes.push_back(node->airport_data[0].code);
+            node = node->children.begin()->second;
+        }
+    }
+
+    start_time = chrono::high_resolution_clock::now();
+    for (int i = 0; i < 1000; ++i) {
+        string airport_code = airport_codes[rand() % airport_codes.size()];
+        TrieNode* node = root;
+        for (char c : airport_code) {
+            if (node->children.find(c) == node->children.end()) {
+                break;
+            }
+            node = node->children[c];
+        }
+    }
+    end_time = chrono::high_resolution_clock::now();
+
+    duration = chrono::duration_cast<chrono::microseconds>(end_time - start_time).count();
+    cout << "Average Trie Lookup Time: " << duration / 1000.0 << " microseconds" << endl;
+}
+
+
 int main() {
     string file = "airlines.csv";
 
@@ -326,6 +415,10 @@ int main() {
                 cout << setw(3) << entry.first << ": " << setprecision(2) << fixed << entry.second << "%" << endl;
             }
             cout << "\n(Note) 2016 will not be accurate" << endl;
+
+            cout << "\nHash Table:" << endl;
+            measureHashTable(file);
+            cout << endl;
         }
         else {
             cout << "No data found for the entered airport code." <<
